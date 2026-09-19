@@ -1,0 +1,6 @@
+{
+  "name": "tiraz.bh | طراز للتطريز والطباعة",
+  "description": "متجر واستوديو طراز (tiraz.bh) لخدمات التطريز والطباعة العصرية على الملابس وتصميم الأفكار الخاصة حسب الطلب في البحرين.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
