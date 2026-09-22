@@ -11,48 +11,45 @@ import { Footer } from './components/Footer';
 import { Cart } from './components/Cart';
 import { StoreSettings, CatalogItem, GarmentOption, GarmentColor, GarmentSize, CustomDesignState, CartItem } from './types';
 import { DEFAULT_STORE_SETTINGS, INITIAL_CATALOG, GARMENTS, GARMENT_COLORS } from './data/initialData';
+import dbData from './data/db.json';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'catalog' | 'studio' | 'about' | 'admin'>('catalog');
 
-  // Store Settings with LocalStorage persistence
+  // Store Settings with LocalStorage and db.json persistence
   const [settings, setSettings] = useState<StoreSettings>(() => {
     try {
       const saved = localStorage.getItem('tiraz_settings');
-      return saved ? JSON.parse(saved) : DEFAULT_STORE_SETTINGS;
-    } catch {
-      return DEFAULT_STORE_SETTINGS;
-    }
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return (dbData && dbData.settings ? dbData.settings : DEFAULT_STORE_SETTINGS) as StoreSettings;
   });
 
-  // Catalog Items with LocalStorage persistence
+  // Catalog Items with LocalStorage and db.json persistence
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>(() => {
     try {
       const saved = localStorage.getItem('tiraz_catalog');
-      return saved ? JSON.parse(saved) : INITIAL_CATALOG;
-    } catch {
-      return INITIAL_CATALOG;
-    }
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return (dbData && dbData.catalogItems ? dbData.catalogItems : INITIAL_CATALOG) as CatalogItem[];
   });
 
-  // Available global colors with LocalStorage persistence
+  // Available global colors with LocalStorage and db.json persistence
   const [colors, setColors] = useState<GarmentColor[]>(() => {
     try {
       const saved = localStorage.getItem('tiraz_colors');
-      return saved ? JSON.parse(saved) : GARMENT_COLORS;
-    } catch {
-      return GARMENT_COLORS;
-    }
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return (dbData && dbData.colors ? dbData.colors : GARMENT_COLORS) as GarmentColor[];
   });
 
-  // Available global garments with LocalStorage persistence
+  // Available global garments with LocalStorage and db.json persistence
   const [garments, setGarments] = useState<GarmentOption[]>(() => {
     try {
       const saved = localStorage.getItem('tiraz_garments');
-      return saved ? JSON.parse(saved) : GARMENTS;
-    } catch {
-      return GARMENTS;
-    }
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return (dbData && dbData.garments ? dbData.garments : GARMENTS) as GarmentOption[];
   });
 
   // Selected Catalog Item passed to Studio
@@ -160,6 +157,35 @@ export default function App() {
     }
   }, [garments]);
 
+  // Synchronize state with backend filesystem in development
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const timer = setTimeout(() => {
+        fetch('/api/save-state', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            settings,
+            catalogItems,
+            colors,
+            garments,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              console.log('[Dev] Workspace state successfully synchronized to src/data/db.json');
+            }
+          })
+          .catch((err) => console.error('[Dev] Error saving workspace state:', err));
+      }, 1000); // Debounce by 1 second to bundle rapid modifications
+
+      return () => clearTimeout(timer);
+    }
+  }, [settings, catalogItems, colors, garments]);
+
   // Handler to choose catalog design and switch to customizer studio
   const handleSelectCatalogItemForCustomizer = (item: CatalogItem) => {
     setStudioCatalogItem(item);
@@ -190,8 +216,104 @@ export default function App() {
     setGarments(GARMENTS);
   };
 
+  // Swipe gesture navigation for mobile screens (RTL safe)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  const [touchEndY, setTouchEndY] = useState<number | null>(null);
+
+  const isWithinHorizontalScroll = (el: HTMLElement | null): boolean => {
+    while (el && el !== document.body) {
+      const style = window.getComputedStyle(el);
+      if (
+        (style.overflowX === 'auto' || style.overflowX === 'scroll' || el.classList.contains('overflow-x-auto') || el.classList.contains('overflow-x-scroll')) &&
+        el.scrollWidth > el.clientWidth
+      ) {
+        return true;
+      }
+      el = el.parentElement;
+    }
+    return false;
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Ignore interactive elements to prevent conflict with design tools/inputs
+    if (
+      target.closest('input') || 
+      target.closest('textarea') || 
+      target.closest('button') || 
+      target.closest('select') ||
+      target.closest('canvas') ||
+      target.closest('[role="slider"]') ||
+      target.closest('.no-swipe') ||
+      isWithinHorizontalScroll(target)
+    ) {
+      return;
+    }
+
+    setTouchEndX(null);
+    setTouchEndY(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null || touchStartY === null) return;
+    setTouchEndX(e.targetTouches[0].clientX);
+    setTouchEndY(e.targetTouches[0].clientY);
+  };
+
+  const onTouchEnd = () => {
+    if (touchStartX === null || touchEndX === null || touchStartY === null || touchEndY === null) return;
+
+    const xDistance = touchStartX - touchEndX;
+    const yDistance = touchStartY - touchEndY;
+    const isHorizontalSwipe = Math.abs(xDistance) > Math.abs(yDistance);
+    const minSwipeDistance = 70; // Sensible threshold in pixels
+
+    if (isHorizontalSwipe && Math.abs(xDistance) > minSwipeDistance) {
+      const isLeftSwipe = xDistance > 0;
+      const TABS_SEQUENCE: ('catalog' | 'studio' | 'about' | 'admin')[] = ['catalog', 'studio', 'about'];
+      
+      // Limit swipe navigation to customer-facing tabs for pristine UX
+      const currentIndex = TABS_SEQUENCE.indexOf(activeTab as any);
+      
+      if (currentIndex !== -1) {
+        if (isLeftSwipe) {
+          // Swipe left (finger moves left) -> Next tab (forward)
+          if (currentIndex < TABS_SEQUENCE.length - 1) {
+            setActiveTab(TABS_SEQUENCE[currentIndex + 1]);
+          }
+        } else {
+          // Swipe right (finger moves right) -> Previous tab (back)
+          if (currentIndex > 0) {
+            setActiveTab(TABS_SEQUENCE[currentIndex - 1]);
+          }
+        }
+      } else if (activeTab === 'admin') {
+        // If in admin panel, swiping right goes back to FAQ/About page
+        if (!isLeftSwipe) {
+          setActiveTab('about');
+        }
+      }
+    }
+
+    // Clear coordinates
+    setTouchStartX(null);
+    setTouchEndX(null);
+    setTouchStartY(null);
+    setTouchEndY(null);
+  };
+
   return (
-    <div className="min-h-screen bg-stone-100 text-stone-900 font-['Cairo',sans-serif] flex flex-col justify-between selection:bg-amber-100 selection:text-amber-900">
+    <div 
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className="min-h-screen bg-stone-100 text-stone-900 font-['Cairo',sans-serif] flex flex-col justify-between selection:bg-amber-100 selection:text-amber-900"
+    >
       
       {/* Header Navbar */}
       <Header

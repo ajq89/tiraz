@@ -173,18 +173,18 @@ ${itemsSummary}
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-2xl w-full my-8 overflow-hidden shadow-2xl border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/65 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border-t sm:border border-slate-200">
         
         {/* Modal Header */}
-        <div className="bg-slate-900 text-white p-5 flex items-center justify-between border-b border-slate-800">
+        <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#25d366] flex items-center justify-center text-white font-bold shadow-md shadow-emerald-900/30">
-              <PhoneCall className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#25d366] flex items-center justify-center text-white font-bold shadow-md shadow-emerald-900/30 shrink-0">
+              <PhoneCall className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-white font-['Cairo']">تأكيد ومراجعة الطلب للواتساب</h3>
-              <p className="text-xs text-slate-400">tiraz.bh - التوصيل لجميع مناطق البحرين 🇧🇭</p>
+              <h3 className="font-extrabold text-sm sm:text-base text-white font-['Cairo']">تأكيد ومراجعة الطلب للواتساب</h3>
+              <p className="text-[10px] sm:text-xs text-slate-400">tiraz.bh - التوصيل لجميع مناطق البحرين 🇧🇭</p>
             </div>
           </div>
 
@@ -192,12 +192,12 @@ ${itemsSummary}
             onClick={onClose}
             className="p-2 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto grow">
           
           {/* Detailed Boutique Invoice Receipt Card */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 relative overflow-hidden shadow-sm space-y-4">
@@ -306,67 +306,34 @@ ${itemsSummary}
             </div>
           </div>
 
-          {/* Quick Garment Adjustment Selectors inside Modal */}
+          {/* Quick Garment Adjustment Selectors inside Modal - Now Static and Unchangeable as requested */}
           {!isCartMode && (
-            <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 border-b border-slate-100 pb-2">
-                <Shirt className="w-4 h-4 text-emerald-600" />
-                <span>تعديل تفاصيل المنتج والمقاس واللون بطلبك:</span>
+            <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-3 shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 border-b border-stone-200/60 pb-2">
+                <Shirt className="w-4 h-4 text-amber-600" />
+                <span>تفاصيل القطعة المطلوبة للتنفيذ (ثابتة):</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Garment Selector */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 block">نوع القطعة:</label>
-                  <select
-                    value={selectedGarment.id}
-                    onChange={(e) => {
-                      const found = GARMENTS.find((g) => g.id === e.target.value);
-                      if (found) setSelectedGarment(found);
-                    }}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-bold"
-                  >
-                    {GARMENTS.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.nameAr}
-                      </option>
-                    ))}
-                  </select>
+                {/* Garment Details Display */}
+                <div className="bg-white p-2.5 rounded-lg border border-stone-200/40 flex flex-col justify-center">
+                  <span className="text-[10px] text-stone-500 font-bold block mb-0.5">نوع القطعة:</span>
+                  <span className="text-xs font-black text-stone-800">{selectedGarment.nameAr}</span>
                 </div>
 
-                {/* Color Selector */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 block">اللون المفضل:</label>
-                  <select
-                    value={selectedColor.id}
-                    onChange={(e) => {
-                      const found = GARMENT_COLORS.find((c) => c.id === e.target.value);
-                      if (found) setSelectedColor(found);
-                    }}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-bold"
-                  >
-                    {GARMENT_COLORS.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nameAr}
-                      </option>
-                    ))}
-                  </select>
+                {/* Color Details Display */}
+                <div className="bg-white p-2.5 rounded-lg border border-stone-200/40 flex flex-col justify-center">
+                  <span className="text-[10px] text-stone-500 font-bold block mb-0.5">اللون المفضل:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded-full border border-stone-200 shadow-sm" style={{ backgroundColor: selectedColor.hex }} />
+                    <span className="text-xs font-black text-stone-800">{selectedColor.nameAr}</span>
+                  </div>
                 </div>
 
-                {/* Size Selector */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 block">المقاس المطلوبة:</label>
-                  <select
-                    value={selectedSize}
-                    onChange={(e) => setSelectedSize(e.target.value as GarmentSize)}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-bold"
-                  >
-                    {AVAILABLE_SIZES.map((sz) => (
-                      <option key={sz} value={sz}>
-                        المقاس {sz}
-                      </option>
-                    ))}
-                  </select>
+                {/* Size Details Display */}
+                <div className="bg-white p-2.5 rounded-lg border border-stone-200/40 flex flex-col justify-center">
+                  <span className="text-[10px] text-stone-500 font-bold block mb-0.5">المقاس المطلوب:</span>
+                  <span className="text-xs font-black text-stone-800">المقاس {selectedSize}</span>
                 </div>
               </div>
             </div>
@@ -526,7 +493,7 @@ ${itemsSummary}
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
           <div className="text-xs text-slate-500 flex items-center gap-1.5">
             <Truck className="w-4 h-4 text-emerald-600 animate-bounce" />
             <span className="font-medium text-slate-600">سيتم فتح الواتساب مباشرة وتمرير كامل تفاصيل طلبك</span>

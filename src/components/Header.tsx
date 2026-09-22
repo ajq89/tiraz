@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Palette, Sparkles, Shirt, MessageSquare, Settings, ShoppingBag, PhoneCall } from 'lucide-react';
 import { StoreSettings } from '../types';
 
@@ -17,8 +17,33 @@ export const Header: React.FC<HeaderProps> = ({
   cartCount = 0,
   onOpenCart,
 }) => {
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Determine scrolling direction and threshold to collapse/reveal header on mobile
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down -> Hide header
+        setIsVisible(false);
+      } else {
+        // Scrolling up or near top -> Show header
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md text-slate-900 border-b border-slate-200 shadow-sm">
+    <header className={`sticky top-0 z-40 bg-white/95 backdrop-blur-md text-slate-900 border-b border-slate-200 shadow-sm transition-transform duration-300 ease-in-out ${
+      isVisible ? 'translate-y-0' : '-translate-y-full md:translate-y-0'
+    }`}>
       {/* Top Banner Notice */}
       {settings.enablePromoFreeDelivery ? (
         <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900 text-white text-xs py-2 px-4 text-center font-bold flex items-center justify-center gap-2 shadow-inner select-none relative overflow-hidden">
