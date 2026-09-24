@@ -13,8 +13,16 @@ import { StoreSettings, CatalogItem, GarmentOption, GarmentColor, GarmentSize, C
 import { DEFAULT_STORE_SETTINGS, INITIAL_CATALOG, GARMENTS, GARMENT_COLORS } from './data/initialData';
 import dbData from './data/db.json';
 
+// Firebase imports
+import { collection, onSnapshot, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'catalog' | 'studio' | 'about' | 'admin'>('catalog');
+
+  // Active Admin Auth User State
+  const [user, setUser] = useState<User | null>(null);
 
   // Store Settings with LocalStorage and db.json persistence
   const [settings, setSettings] = useState<StoreSettings>(() => {
@@ -51,6 +59,124 @@ export default function App() {
     } catch {}
     return (dbData && dbData.garments ? dbData.garments : GARMENTS) as GarmentOption[];
   });
+
+  // 1. Firebase Auth listener
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+    });
+    return unsub;
+  }, []);
+
+  // 2. Firebase Realtime database synchronization
+  useEffect(() => {
+    // A. Settings listener
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'store_settings'), (snapshot) => {
+      if (snapshot.exists()) {
+        setSettings(snapshot.data() as StoreSettings);
+      }
+    }, (error) => {
+      console.warn('Settings not initialized in Firestore yet:', error);
+    });
+
+    // B. Catalog Items listener
+    const unsubCatalog = onSnapshot(collection(db, 'catalogItems'), (snapshot) => {
+      if (!snapshot.empty) {
+        const items: CatalogItem[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push(docSnap.data() as CatalogItem);
+        });
+        setCatalogItems(items);
+      }
+    }, (error) => {
+      console.warn('Catalog items not loaded from Firestore:', error);
+    });
+
+    // C. Colors listener
+    const unsubColors = onSnapshot(collection(db, 'colors'), (snapshot) => {
+      if (!snapshot.empty) {
+        const items: GarmentColor[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push(docSnap.data() as GarmentColor);
+        });
+        setColors(items);
+      }
+    }, (error) => {
+      console.warn('Colors not loaded from Firestore:', error);
+    });
+
+    // D. Garments listener
+    const unsubGarments = onSnapshot(collection(db, 'garments'), (snapshot) => {
+      if (!snapshot.empty) {
+        const items: GarmentOption[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push(docSnap.data() as GarmentOption);
+        });
+        setGarments(items);
+      }
+    }, (error) => {
+      console.warn('Garments not loaded from Firestore:', error);
+    });
+
+    return () => {
+      unsubSettings();
+      unsubCatalog();
+      unsubColors();
+      unsubGarments();
+    };
+  }, []);
+
+  // 3. Auto-initialize empty Firestore collections when the admin "mursal.bh@gmail.com" signs in
+  useEffect(() => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      const initFirestore = async () => {
+        try {
+          const settingsSnap = await getDoc(doc(db, 'settings', 'store_settings'));
+          if (!settingsSnap.exists()) {
+            console.log('[Firebase] Cloud DB is brand new. Initializing values in Firestore...');
+            await setDoc(doc(db, 'settings', 'store_settings'), settings);
+            
+            for (const item of catalogItems) {
+              await setDoc(doc(db, 'catalogItems', item.id), item);
+            }
+            
+            for (const col of colors) {
+              await setDoc(doc(db, 'colors', col.id), col);
+            }
+            
+            for (const gar of garments) {
+              await setDoc(doc(db, 'garments', gar.id), gar);
+            }
+            console.log('[Firebase] Successfully initialized empty Cloud Firestore with default values!');
+          }
+        } catch (err) {
+          console.error('Error auto-initializing empty Firestore:', err);
+        }
+      };
+      initFirestore();
+    }
+  }, [user]);
+
+  // Auth helper methods passed to AdminPanel
+  const handleSignInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (err) {
+      console.error('Auth Sign-In Error:', err);
+      throw err;
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error('Auth Sign-Out Error:', err);
+    }
+  };
 
   // Selected Catalog Item passed to Studio
   const [studioCatalogItem, setStudioCatalogItem] = useState<CatalogItem | null>(null);
@@ -194,27 +320,119 @@ export default function App() {
   };
 
   // Add new item in admin
-  const handleAddCatalogItem = (newItem: CatalogItem) => {
-    setCatalogItems((prev) => [newItem, ...prev]);
+  const handleAddCatalogItem = async (newItem: CatalogItem) => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      try {
+        await setDoc(doc(db, 'catalogItems', newItem.id), newItem);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `catalogItems/${newItem.id}`);
+      }
+    } else {
+      setCatalogItems((prev) => [newItem, ...prev]);
+    }
   };
 
   // Update item in admin
-  const handleUpdateCatalogItem = (updatedItem: CatalogItem) => {
-    setCatalogItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
+  const handleUpdateCatalogItem = async (updatedItem: CatalogItem) => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      try {
+        await setDoc(doc(db, 'catalogItems', updatedItem.id), updatedItem);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `catalogItems/${updatedItem.id}`);
+      }
+    } else {
+      setCatalogItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
+    }
   };
 
   // Delete item in admin
-  const handleDeleteCatalogItem = (id: string) => {
-    setCatalogItems((prev) => prev.filter((item) => item.id !== id));
+  const handleDeleteCatalogItem = async (id: string) => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      try {
+        await deleteDoc(doc(db, 'catalogItems', id));
+      } catch (err) {
+        handleFirestoreError(err, OperationType.DELETE, `catalogItems/${id}`);
+      }
+    } else {
+      setCatalogItems((prev) => prev.filter((item) => item.id !== id));
+    }
+  };
+
+  // Update settings in admin
+  const handleUpdateSettings = async (newSet: StoreSettings) => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      try {
+        await setDoc(doc(db, 'settings', 'store_settings'), newSet);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'settings/store_settings');
+      }
+    } else {
+      setSettings(newSet);
+    }
+  };
+
+  // Update colors in admin
+  const handleUpdateColors = async (newColors: GarmentColor[]) => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      try {
+        for (const col of newColors) {
+          await setDoc(doc(db, 'colors', col.id), col);
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'colors');
+      }
+    } else {
+      setColors(newColors);
+    }
+  };
+
+  // Update garments in admin
+  const handleUpdateGarments = async (newGarments: GarmentOption[]) => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      try {
+        for (const gar of newGarments) {
+          await setDoc(doc(db, 'garments', gar.id), gar);
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'garments');
+      }
+    } else {
+      setGarments(newGarments);
+    }
   };
 
   // Reset default catalog and settings
-  const handleResetCatalog = () => {
-    setCatalogItems(INITIAL_CATALOG);
-    setSettings(DEFAULT_STORE_SETTINGS);
-    setColors(GARMENT_COLORS);
-    setGarments(GARMENTS);
+  const handleResetCatalog = async () => {
+    const isAdminUser = user && user.email === 'mursal.bh@gmail.com' && user.emailVerified;
+    if (isAdminUser) {
+      try {
+        await setDoc(doc(db, 'settings', 'store_settings'), DEFAULT_STORE_SETTINGS);
+        for (const item of INITIAL_CATALOG) {
+          await setDoc(doc(db, 'catalogItems', item.id), item);
+        }
+        for (const col of GARMENT_COLORS) {
+          await setDoc(doc(db, 'colors', col.id), col);
+        }
+        for (const gar of GARMENTS) {
+          await setDoc(doc(db, 'garments', gar.id), gar);
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'reset');
+      }
+    } else {
+      setCatalogItems(INITIAL_CATALOG);
+      setSettings(DEFAULT_STORE_SETTINGS);
+      setColors(GARMENT_COLORS);
+      setGarments(GARMENTS);
+    }
   };
+
 
   // Swipe gesture navigation for mobile screens (RTL safe)
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -381,6 +599,9 @@ export default function App() {
                 onUpdateColors={setColors}
                 garments={garments}
                 onUpdateGarments={setGarments}
+                user={user}
+                onSignIn={handleSignInWithGoogle}
+                onSignOut={handleSignOut}
               />
             )}
           </motion.div>

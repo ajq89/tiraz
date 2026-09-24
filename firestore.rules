@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() 
+        && request.auth.token.email == 'mursal.bh@gmail.com' 
+        && request.auth.token.email_verified == true;
+    }
+
+    // Validation Helpers
+    function isValidStoreSettings(data) {
+      return data.whatsappNumber is string && data.whatsappNumber.size() > 0 && data.whatsappNumber.size() <= 32
+        && data.deliveryFee is number && data.deliveryFee >= 0.0
+        && data.currency is string && data.currency.size() <= 10
+        && data.storeNameAr is string && data.storeNameAr.size() > 0 && data.storeNameAr.size() <= 100
+        && data.storeNameEn is string && data.storeNameEn.size() > 0 && data.storeNameEn.size() <= 100;
+    }
+
+    function isValidCatalogItem(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 256
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 100
+        && data.technique is string && (data.technique == 'embroidery' || data.technique == 'printing')
+        && data.imageUrl is string && data.imageUrl.size() > 0 && data.imageUrl.size() <= 2048
+        && data.price is number && data.price >= 0.0;
+    }
+
+    function isValidGarmentColor(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.nameAr is string && data.nameAr.size() > 0 && data.nameAr.size() <= 100
+        && data.nameEn is string && data.nameEn.size() > 0 && data.nameEn.size() <= 100
+        && data.hex is string && data.hex.size() > 0 && data.hex.size() <= 20;
+    }
+
+    function isValidGarmentOption(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.nameAr is string && data.nameAr.size() > 0 && data.nameAr.size() <= 200
+        && data.nameEn is string && data.nameEn.size() > 0 && data.nameEn.size() <= 200
+        && data.basePrice is number && data.basePrice >= 0.0
+        && data.description is string;
+    }
+
+    // Rules for settings
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidStoreSettings(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Rules for catalog items
+    match /catalogItems/{catalogItemId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(catalogItemId) && isValidCatalogItem(incoming());
+      allow update: if isAdmin() && isValidId(catalogItemId) && isValidCatalogItem(incoming()) && incoming().id == existing().id;
+      allow delete: if isAdmin();
+    }
+
+    // Rules for colors
+    match /colors/{colorId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(colorId) && isValidGarmentColor(incoming());
+      allow update: if isAdmin() && isValidId(colorId) && isValidGarmentColor(incoming()) && incoming().id == existing().id;
+      allow delete: if isAdmin();
+    }
+
+    // Rules for garments
+    match /garments/{garmentId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(garmentId) && isValidGarmentOption(incoming());
+      allow update: if isAdmin() && isValidId(garmentId) && isValidGarmentOption(incoming()) && incoming().id == existing().id;
+      allow delete: if isAdmin();
+    }
+  }
+}

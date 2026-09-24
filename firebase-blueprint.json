@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "StoreSettings": {
+      "title": "Store Settings",
+      "description": "Store settings like Whatsapp number, delivery fee, categories, and prices.",
+      "type": "object",
+      "properties": {
+        "whatsappNumber": { "type": "string" },
+        "deliveryFee": { "type": "number" },
+        "currency": { "type": "string" },
+        "storeNameAr": { "type": "string" },
+        "storeNameEn": { "type": "string" },
+        "subTitle": { "type": "string" },
+        "instagramHandle": { "type": "string" },
+        "freeDeliveryThreshold": { "type": "number" },
+        "enablePromoFreeDelivery": { "type": "boolean" },
+        "promoFreeDeliveryText": { "type": "string" },
+        "enableCustomUpload": { "type": "boolean" },
+        "basePrices": { "type": "object" },
+        "techniquePrices": { "type": "object" },
+        "categories": { "type": "array" }
+      },
+      "required": ["whatsappNumber", "deliveryFee", "currency", "storeNameAr", "storeNameEn"]
+    },
+    "CatalogItem": {
+      "title": "Catalog Item",
+      "description": "An item in the shop design catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "technique": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "tags": { "type": "array" },
+        "isNew": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "allowedGarments": { "type": "array" },
+        "sideOption": { "type": "string" },
+        "isFixed": { "type": "boolean" },
+        "fixedPlacement": { "type": "string" },
+        "frontScale": { "type": "number" },
+        "backScale": { "type": "number" },
+        "svgData": { "type": "string" },
+        "priceTwoSides": { "type": "number" }
+      },
+      "required": ["id", "title", "category", "technique", "imageUrl", "price"]
+    },
+    "GarmentColor": {
+      "title": "Garment Color",
+      "description": "A garment color option in the shop",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nameAr": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "hex": { "type": "string" },
+        "bgClass": { "type": "string" },
+        "textColor": { "type": "string" }
+      },
+      "required": ["id", "nameAr", "nameEn", "hex"]
+    },
+    "GarmentOption": {
+      "title": "Garment Option",
+      "description": "A garment style option in the shop",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nameAr": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "basePrice": { "type": "number" },
+        "description": { "type": "string" },
+        "availableColors": { "type": "array" },
+        "availableSizes": { "type": "array" },
+        "realImageUrlFront": { "type": "string" },
+        "realImageUrlBack": { "type": "string" },
+        "useRealPhoto": { "type": "boolean" }
+      },
+      "required": ["id", "nameAr", "nameEn", "basePrice", "description"]
+    }
+  },
+  "firestore": {
+    "/settings/{settingsId}": {
+      "schema": "StoreSettings",
+      "description": "Collection storing application level settings. Only contains store_settings."
+    },
+    "/catalogItems/{catalogItemId}": {
+      "schema": "CatalogItem",
+      "description": "Collection of available designs/items."
+    },
+    "/colors/{colorId}": {
+      "schema": "GarmentColor",
+      "description": "Collection of global available garment colors."
+    },
+    "/garments/{garmentId}": {
+      "schema": "GarmentOption",
+      "description": "Collection of global available garments."
+    }
+  }
+}
