@@ -536,14 +536,14 @@ export const StudioCustomizer: React.FC<StudioCustomizerProps> = ({
                 </button>
               </label>
 
-              <div className="flex flex-wrap gap-1.5">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {selectedGarment.availableSizes.map((sz) => (
                   <button
                     key={sz}
                     onClick={() => setSelectedSize(sz)}
-                    className={`flex-1 min-w-[36px] py-2 rounded-lg text-xs font-bold border transition-all ${
+                    className={`h-10 rounded-xl text-xs font-black border transition-all flex items-center justify-center ${
                       selectedSize === sz
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm scale-[1.03]'
                         : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
                     }`}
                   >
@@ -712,14 +712,14 @@ export const StudioCustomizer: React.FC<StudioCustomizerProps> = ({
               </label>
 
               {/* Design Tabs */}
-              <div className="flex bg-slate-100 p-1 rounded-lg text-xs font-bold">
+              <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold overflow-x-auto whitespace-nowrap max-w-full scrollbar-none gap-1 no-swipe">
                 <button
                   onClick={() => {
                     setDesignTab('catalog');
                     updateActiveCustomization((prev) => ({ ...prev, designType: 'catalog' }));
                   }}
-                  className={`px-3 py-1.5 rounded-md transition-all ${
-                    designTab === 'catalog' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600'
+                  className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg transition-all ${
+                    designTab === 'catalog' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   الكتالوج
@@ -729,8 +729,8 @@ export const StudioCustomizer: React.FC<StudioCustomizerProps> = ({
                     setDesignTab('upload');
                     updateActiveCustomization((prev) => ({ ...prev, designType: 'upload' }));
                   }}
-                  className={`px-3 py-1.5 rounded-md transition-all ${
-                    designTab === 'upload' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600'
+                  className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg transition-all ${
+                    designTab === 'upload' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   رفع ملف خاص
@@ -740,8 +740,8 @@ export const StudioCustomizer: React.FC<StudioCustomizerProps> = ({
                     setDesignTab('text');
                     updateActiveCustomization((prev) => ({ ...prev, designType: 'text' }));
                   }}
-                  className={`px-3 py-1.5 rounded-md transition-all ${
-                    designTab === 'text' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600'
+                  className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg transition-all ${
+                    designTab === 'text' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   نص / اسم
@@ -751,8 +751,8 @@ export const StudioCustomizer: React.FC<StudioCustomizerProps> = ({
                     setDesignTab('full-upload');
                     updateActiveCustomization((prev) => ({ ...prev, designType: 'full-upload' }));
                   }}
-                  className={`px-3 py-1.5 rounded-md transition-all ${
-                    designTab === 'full-upload' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600'
+                  className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg transition-all ${
+                    designTab === 'full-upload' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   صورة كاملة

@@ -79,6 +79,34 @@ export const GarmentSvgMockup: React.FC<GarmentSvgMockupProps> = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
+  // Drag interaction handler for mobile touch screens
+  const handleTouchStart = (e: React.TouchEvent<SVGGElement>) => {
+    if (!interactive || !onPositionChange) return;
+    // Allow page scrolling on outer touch, but intercept here inside the artwork boundary
+    e.stopPropagation();
+
+    const touch = e.touches[0];
+    const startX = touch.clientX;
+    const startY = touch.clientY;
+    const initialPosX = customization.positionX;
+    const initialPosY = customization.positionY;
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      const moveTouch = moveEvent.touches[0];
+      const dx = moveTouch.clientX - startX;
+      const dy = moveTouch.clientY - startY;
+      onPositionChange(initialPosX + dx * 0.8, initialPosY + dy * 0.8);
+    };
+
+    const handleTouchEnd = () => {
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
+  };
+
   const fillColor = color.hex;
   const isDark = color.id === 'black' || color.id === 'navy' || color.id === 'burgundy' || color.id === 'charcoal' || color.id === 'olive';
   const seamStroke = isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.24)';
@@ -904,6 +932,7 @@ export const GarmentSvgMockup: React.FC<GarmentSvgMockupProps> = ({
       <g
         transform={`translate(${centerX} ${centerY}) rotate(${rotation}) scale(${scale} ${scale})`}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
         className={interactive ? 'cursor-grab active:cursor-grabbing hover:opacity-95' : ''}
       >
         {/* Placement outline guide when active */}
@@ -932,7 +961,8 @@ export const GarmentSvgMockup: React.FC<GarmentSvgMockupProps> = ({
               width="84"
               height="84"
               preserveAspectRatio="xMidYMid slice"
-              className="rounded-sm"
+              className="rounded-sm pointer-events-none"
+              onContextMenu={(e) => e.preventDefault()}
               style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.4))' }}
             />
             {/* Real cotton texture overlay on top of cross-origin images (completely CORS-safe & looks stunning) */}
@@ -991,6 +1021,8 @@ export const GarmentSvgMockup: React.FC<GarmentSvgMockupProps> = ({
               width="84"
               height="84"
               preserveAspectRatio="xMidYMid meet"
+              className="pointer-events-none"
+              onContextMenu={(e) => e.preventDefault()}
               style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.4))' }}
             />
             {/* Real cotton texture overlay */}
@@ -1087,7 +1119,7 @@ export const GarmentSvgMockup: React.FC<GarmentSvgMockupProps> = ({
       <svg
         viewBox="0 0 400 500"
         className="w-full h-full drop-shadow-2xl overflow-visible"
-        style={{ touchAction: 'none' }}
+        style={{ touchAction: 'pan-y' }}
       >
         <defs>
           {/* 1. Floor Ground Soft Shadow */}

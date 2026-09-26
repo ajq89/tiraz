@@ -68,6 +68,7 @@ export const OrderWhatsAppModal: React.FC<OrderWhatsAppModalProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   // Dynamic Live Price Calculations
   const subtotal = isCartMode 
@@ -151,6 +152,12 @@ ${itemsSummary}
 
   // Launch WhatsApp Action
   const handleSendWhatsApp = () => {
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setShowErrors(true);
+      alert('الرجاء ملء حقول الاسم الكريم ورقم الاتصال أولاً لإتمام إرسال الطلب! ⚠️');
+      return;
+    }
+
     // Fire celebratory confetti
     confetti({
       particleCount: 90,
@@ -349,31 +356,51 @@ ${itemsSummary}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Name */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>الاسم الكريم: *</span>
+                  {showErrors && !customerName.trim() && (
+                    <span className="text-[10px] text-red-500 font-bold">حقل مطلوب</span>
+                  )}
                 </label>
                 <input
                   type="text"
                   required
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    if (showErrors && e.target.value.trim()) setShowErrors(false);
+                  }}
                   placeholder="أدخل اسمك الكريم..."
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs focus:ring-2 focus:ring-slate-900 font-medium"
+                  className={`w-full px-3.5 py-2 rounded-lg text-xs font-medium focus:ring-2 focus:ring-slate-900 transition-all ${
+                    showErrors && !customerName.trim()
+                      ? 'border border-red-500 bg-red-50/50 text-red-900 placeholder-red-400 focus:ring-red-500'
+                      : 'bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900'
+                  }`}
                 />
               </div>
 
               {/* Phone */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>رقم الاتصال / الواتساب: *</span>
+                  {showErrors && !customerPhone.trim() && (
+                    <span className="text-[10px] text-red-500 font-bold">حقل مطلوب</span>
+                  )}
                 </label>
                 <input
                   type="tel"
                   required
                   value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  onChange={(e) => {
+                    setCustomerPhone(e.target.value);
+                    if (showErrors && e.target.value.trim()) setShowErrors(false);
+                  }}
                   placeholder="33XXXXXX"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs focus:ring-2 focus:ring-slate-900 font-mono font-medium"
+                  className={`w-full px-3.5 py-2 rounded-lg text-xs font-mono font-medium focus:ring-2 focus:ring-slate-900 transition-all ${
+                    showErrors && !customerPhone.trim()
+                      ? 'border border-red-500 bg-red-50/50 text-red-900 placeholder-red-400 focus:ring-red-500'
+                      : 'bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900'
+                  }`}
                 />
               </div>
             </div>
@@ -511,7 +538,11 @@ ${itemsSummary}
             <button
               type="button"
               onClick={handleSendWhatsApp}
-              className="flex-1 sm:flex-initial relative overflow-hidden bg-gradient-to-r from-[#25d366] via-[#128c7e] to-[#075e54] text-white font-extrabold py-3 px-6 rounded-xl text-xs transition-all duration-300 shadow-[0_4px_20px_rgba(37,211,102,0.45)] hover:shadow-[0_6px_25px_rgba(37,211,102,0.65)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group cursor-pointer"
+              className={`flex-1 sm:flex-initial relative overflow-hidden font-extrabold py-3 px-6 rounded-xl text-xs transition-all duration-300 flex items-center justify-center gap-2 group cursor-pointer ${
+                (!customerName.trim() || !customerPhone.trim())
+                  ? 'bg-slate-300 text-slate-500 border border-slate-200/50'
+                  : 'bg-gradient-to-r from-[#25d366] via-[#128c7e] to-[#075e54] text-white shadow-[0_4px_20px_rgba(37,211,102,0.45)] hover:shadow-[0_6px_25px_rgba(37,211,102,0.65)] hover:-translate-y-0.5 active:translate-y-0'
+              }`}
             >
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
               

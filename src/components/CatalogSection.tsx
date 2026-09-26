@@ -217,13 +217,22 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
             >
               <div>
                 {/* Image & Technique Badge Container */}
-                <div className="relative aspect-square overflow-hidden bg-slate-100">
+                <div className="relative aspect-square overflow-hidden bg-slate-100 select-none">
                   <img
                     src={item.imageUrl}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    draggable="false"
+                    onContextMenu={(e) => e.preventDefault()}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
                     loading="lazy"
                   />
+
+                  {/* Anti-theft Translucent Brand Watermark */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                    <span className="text-[14px] font-black text-white/25 border-2 border-white/15 px-3 py-1 rounded-xl uppercase tracking-widest font-['Plus_Jakarta_Sans'] select-none rotate-12 bg-black/15 backdrop-blur-[0.5px] border-dashed">
+                      TIRAZ • طراز
+                    </span>
+                  </div>
 
                   {/* Overlay Gradient */}
                   <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-3">
@@ -316,12 +325,22 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
       {activeModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-xl border border-slate-200">
-            <div className="relative aspect-video bg-slate-900 overflow-hidden">
+            <div className="relative aspect-video bg-slate-900 overflow-hidden select-none">
               <img
                 src={activeModalItem.imageUrl}
                 alt={activeModalItem.title}
-                className="w-full h-full object-cover"
+                draggable="false"
+                onContextMenu={(e) => e.preventDefault()}
+                className="w-full h-full object-cover pointer-events-none"
               />
+
+              {/* Anti-theft Translucent Brand Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                <span className="text-[18px] font-black text-white/25 border-2 border-white/15 px-4 py-2 rounded-xl uppercase tracking-widest font-['Plus_Jakarta_Sans'] select-none rotate-12 bg-black/15 backdrop-blur-[0.5px] border-dashed">
+                  TIRAZ • طراز
+                </span>
+              </div>
+
               <button
                 onClick={() => setActiveModalItem(null)}
                 className="absolute top-3 left-3 bg-slate-900/80 text-white p-1.5 rounded-full backdrop-blur transition-colors"
